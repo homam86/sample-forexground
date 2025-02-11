@@ -13,6 +13,8 @@ builder.Services.AddAndConfigureApiVersioning();
 
 builder.AddApiOutputCache();
 
+builder.ConfigureAuth();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -1,5 +1,6 @@
 ﻿using ForexGround.ApiService.Providers;
 using ForexGround.ApiService.Providers.Frankfurter;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using System.Net;
@@ -24,6 +25,7 @@ public class ForexController : ControllerBase
     }
 
     [HttpGet("{currency}")]
+    [Authorize(Roles = "Agent")]
     [OutputCache(PolicyName = PolicyNames.Default)]
     public async IAsyncEnumerable<ForexValue> GetAsync(string currency)
     {
@@ -35,6 +37,7 @@ public class ForexController : ControllerBase
     }
 
     [HttpGet("{src}/exchange/{dst}")]
+    [Authorize(Roles = "Agent")]
     [OutputCache(PolicyName = PolicyNames.Default)]
     public async Task<ActionResult<decimal>> GetExchangeAsync(string src, string dst, [FromQuery] decimal amount = 1)
     {
@@ -61,6 +64,7 @@ public class ForexController : ControllerBase
     }
 
     [HttpGet("{currency}/history")]
+    [Authorize(Roles = "Agent")]
     [OutputCache(PolicyName = PolicyNames.Default)]
     public async IAsyncEnumerable<ForexValue> GetHistoryAsync(string currency, [FromQuery] ForexHistoryRequest request)
     {
