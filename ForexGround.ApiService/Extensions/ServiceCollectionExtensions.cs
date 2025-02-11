@@ -1,4 +1,5 @@
-﻿using ForexGround.ApiService.Providers.Frankfurter;
+﻿using ForexGround.ApiService;
+using ForexGround.ApiService.Providers.Frankfurter;
 using Refit;
 
 namespace Microsoft.Extensions.DependencyInjection;

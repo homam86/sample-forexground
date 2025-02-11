@@ -6,6 +6,13 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
+builder.Services.AddControllers();
+
+builder.Services.AddFrankfurterApi();
+
+
+builder.AddApiOutputCache();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -30,6 +37,10 @@ app.MapGet("/weatherforecast", () =>
 });
 
 app.MapDefaultEndpoints();
+
+app.UseOutputCache();
+
+app.MapControllers();
 
 app.Run();
 
