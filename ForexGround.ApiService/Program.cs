@@ -1,3 +1,5 @@
+using ForexGround.ApiService.Middleware;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire components.
@@ -43,6 +45,8 @@ app.MapDefaultEndpoints();
 app.UseOutputCache();
 
 app.MapControllers();
+
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.Run();
 
