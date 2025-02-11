@@ -3,7 +3,6 @@ using ForexGround.ApiService.Providers.Frankfurter;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
-using System.Net;
 
 namespace ForexGround.ApiService.Controllers.V1;
 
