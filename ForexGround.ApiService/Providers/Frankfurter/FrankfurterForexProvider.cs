@@ -4,7 +4,7 @@ using Polly.Retry;
 
 namespace ForexGround.ApiService.Providers.Frankfurter;
 
-public class FrankfurterApiService : IFrankfurterApiService
+public class FrankfurterForexProvider : IForexProvider
 {
     private readonly ILogger _logger;
     private readonly IFrankfurterApiClient _client;
@@ -12,8 +12,11 @@ public class FrankfurterApiService : IFrankfurterApiService
     private readonly AsyncRetryPolicy _retryPolicy;
     private readonly AsyncCircuitBreakerPolicy _circuitBreakerPolicy;
 
-    public FrankfurterApiService(ILogger<FrankfurterApiService> logger,
-        IFrankfurterApiClient client)
+    private static readonly string[] BannedCurrencies = ["TRY", "PLN", "THB", "MXN"];
+
+    #region Ctor()
+    public FrankfurterForexProvider(ILogger<FrankfurterForexProvider> logger,
+    IFrankfurterApiClient client)
     {
         _logger = logger;
         _client = client;
@@ -49,28 +52,62 @@ public class FrankfurterApiService : IFrankfurterApiService
                 onHalfOpen: () => _logger.LogInformation("Circuit breaker is half-open, next call is a trial.")
             );
     }
+    #endregion
 
-    public Task<ForexResponse> GetRateAsync(string baseCurrency, string[] currencies)
+    public string Name => "Frankfurter";
+
+    public async Task<decimal> GetExchangeRate(string fromCurrency, string toCurrency)
     {
-        var symbols = currencies.Length > 0 ? string.Join(",", currencies) : null;
+        fromCurrency = fromCurrency.ToUpper();
+        toCurrency = toCurrency.ToUpper();
 
-        return CallApi(() => _client.GetLatestRatesAsync(baseCurrency, symbols));
+        var result = await CallApi(() => _client.GetLatestRatesAsync(fromCurrency, toCurrency));
+        if (!result.Rates.ContainsKey(toCurrency))
+        {
+            throw new InvalidOperationException($"Currency '{toCurrency}' not found.");
+        }
+
+        return result.Rates[toCurrency];
     }
 
-    public Task<ForexResponseByDate> GetHistoryAsync(string baseCurrency, DateOnly startDate, DateOnly? endDate, string[] currencies)
+    public async IAsyncEnumerable<ForexValue> GetCurrencyPrices(string baseCurrency)
     {
-        var symbols = currencies.Length > 0 ? string.Join(",", currencies) : null;
+        baseCurrency = baseCurrency.ToUpper();
+        var result = await CallApi(() => _client.GetLatestRatesAsync(baseCurrency, null));
+        foreach (var rate in result.Rates)
+        {
+            yield return new ForexValue(rate.Key, baseCurrency, DateTime.UtcNow, rate.Value);
+        }
+    }
+
+    public async IAsyncEnumerable<ForexValue> GetCurrencyPrices(string baseCurrency, DateTime startDate, DateTime? endDate = null)
+    {
+        baseCurrency = baseCurrency.ToUpper();
         var dateRange = $"{startDate:yyyy-MM-dd}..";
         if (endDate.HasValue)
         {
             dateRange += $"{endDate:yyyy-MM-dd}";
         }
 
-        return CallApi(() => _client.GetHistoricalRatesAsync(baseCurrency, dateRange, symbols));
+        var result = await CallApi(() => _client.GetHistoricalRatesAsync(baseCurrency, dateRange));
+
+        foreach (var day in result.Rates)
+        {
+            foreach (var rate in day.Value)
+            {
+                yield return new ForexValue(rate.Key, baseCurrency, DateTime.Parse(day.Key), rate.Value);
+            }
+        }
     }
 
     private Task<TResponse> CallApi<TResponse>(Func<Task<TResponse>> apiCall)
     {
         return _circuitBreakerPolicy.ExecuteAsync(() => _retryPolicy.ExecuteAsync(apiCall));
+    }
+
+    private static bool IsBannedCurrency(string currency)
+    {
+        currency = currency.ToUpper();
+        return BannedCurrencies.Contains(currency);
     }
 }

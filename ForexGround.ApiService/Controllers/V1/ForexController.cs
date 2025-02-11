@@ -1,4 +1,5 @@
-﻿using ForexGround.ApiService.Providers.Frankfurter;
+﻿using ForexGround.ApiService.Providers;
+using ForexGround.ApiService.Providers.Frankfurter;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using System.Net;
@@ -12,30 +13,39 @@ public class ForexController : ControllerBase
 {
     private static readonly string[] BannedCurrencies = ["TRY", "PLN", "THB", "MXN"];
 
-    private readonly ILogger<ForexController> _logger;
-    private readonly IFrankfurterApiService _frankfurterApiService;
+    private readonly ILogger _logger;
+    private readonly IForexProvider _forexProvider;
 
     public ForexController(ILogger<ForexController> logger,
-        IFrankfurterApiService frankfurterApiService)
+        IForexProviderFactory forexProviderFactory)
     {
         _logger = logger;
-        _frankfurterApiService = frankfurterApiService;
+        _forexProvider = forexProviderFactory.GetProvider("Frankfurter");
     }
 
     [HttpGet("{currency}")]
     [OutputCache(PolicyName = PolicyNames.Default)]
-    public async Task<ForexResponse> GetAsync(string currency)
+    public async IAsyncEnumerable<ForexValue> GetAsync(string currency)
     {
-        var result = await _frankfurterApiService.GetRateAsync(currency, []);
-        return result;
+        var exchangeRates = _forexProvider.GetCurrencyPrices(currency);
+        await foreach (var rate in exchangeRates)
+        {
+            yield return rate;
+        }
     }
 
-    [HttpGet("{src}/convert/{dst}")]
+    [HttpGet("{src}/exchange/{dst}")]
     [OutputCache(PolicyName = PolicyNames.Default)]
     public async Task<ActionResult<decimal>> GetExchangeAsync(string src, string dst, [FromQuery] decimal amount = 1)
     {
+        src = src.ToUpper();
         dst = dst.ToUpper();
-        if (IsBannedCurrency(dst))
+        if (IsBannedCurrency(src))
+        {
+            return BadRequest($"Currency '{src}' is not supported");
+        }
+        
+        if (IsBannedCurrency(src) || IsBannedCurrency(dst))
         {
             return BadRequest($"Currency '{dst}' is not supported");
         }
@@ -45,23 +55,24 @@ public class ForexController : ControllerBase
             return BadRequest("Amount must be greater than 0");
         }
 
-        var result = await _frankfurterApiService.GetRateAsync(src, [dst]);
-        if (!result.Rates.ContainsKey(dst))
-        {
-            return StatusCode((int)HttpStatusCode.BadGateway, "Destination currency not found.");
-        }
+        var result = await _forexProvider.GetExchangeRate(src, dst);
 
-        return Ok(result.Rates[dst] * amount);
+        return Ok(result * amount);
     }
 
     [HttpGet("{currency}/history")]
     [OutputCache(PolicyName = PolicyNames.Default)]
-    public async Task<ActionResult<ForexResponse>> GetHistoryAsync(string currency, [FromQuery] ForexHistoryRequest request)
+    public async IAsyncEnumerable<ForexValue> GetHistoryAsync(string currency, [FromQuery] ForexHistoryRequest request)
     {
         // TODO: Add pagination
-        var result = await _frankfurterApiService.GetHistoryAsync(currency, request.StartDate, request.EndDate, []);
+        var startDate = request.StartDate.ToDateTime(TimeOnly.MinValue);
+        var endDate = request.EndDate?.ToDateTime(TimeOnly.MinValue);
 
-        return Ok(result);
+        var exchangeRates = _forexProvider.GetCurrencyPrices(currency, startDate, endDate);
+        await foreach (var rate in exchangeRates)
+        {
+            yield return rate;
+        }
     }
 
     private static bool IsBannedCurrency(string currency)

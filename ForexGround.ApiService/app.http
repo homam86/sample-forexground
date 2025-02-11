@@ -4,15 +4,15 @@ GET {{HostAddress}}/forex/eur
 Accept: application/json
 
 ###
-GET {{HostAddress}}/forex/usd/convert/aud
+GET {{HostAddress}}/forex/usd/exchange/aud
 Accept: application/json
 
 ###
-GET {{HostAddress}}/forex/eur/convert/aud?amount=1000
+GET {{HostAddress}}/forex/eur/exchange/aud?amount=1000
 Accept: application/json
 
 ###
-GET {{HostAddress}}/forex/eur/convert/try
+GET {{HostAddress}}/forex/eur/exchange/try
 Accept: application/json
 
 ###
