@@ -1,4 +1,4 @@
-@HostAddress = https://localhost:7522/api
+@HostAddress = https://localhost:7522/api/v1
 
 GET {{HostAddress}}/forex/eur
 Accept: application/json

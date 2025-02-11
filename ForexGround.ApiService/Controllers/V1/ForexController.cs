@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using System.Net;
 
-namespace ForexGround.ApiService.Controllers;
+namespace ForexGround.ApiService.Controllers.V1;
 
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class ForexController : ControllerBase
 {
     private static readonly string[] BannedCurrencies = ["TRY", "PLN", "THB", "MXN"];

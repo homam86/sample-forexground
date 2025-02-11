@@ -9,7 +9,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
 
 builder.Services.AddFrankfurterApi();
-
+builder.Services.AddAndConfigureApiVersioning();
 
 builder.AddApiOutputCache();
 

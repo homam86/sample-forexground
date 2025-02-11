@@ -1,5 +1,5 @@
-﻿using ForexGround.ApiService;
-using ForexGround.ApiService.Providers.Frankfurter;
+﻿using ForexGround.ApiService.Providers.Frankfurter;
+using Microsoft.AspNetCore.Mvc;
 using Refit;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -13,6 +13,19 @@ public static class ServiceCollectionExtensions
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(BaseUrl));
 
         services.AddScoped<IFrankfurterApiService, FrankfurterApiService>();
+
+        return services;
+    }
+    
+    
+    public static IServiceCollection AddAndConfigureApiVersioning(this IServiceCollection services)
+    {
+        services.AddApiVersioning(options =>
+        {
+            options.ReportApiVersions = true;
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+        });
 
         return services;
     }
