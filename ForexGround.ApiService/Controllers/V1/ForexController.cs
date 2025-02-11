@@ -24,7 +24,7 @@ public class ForexController : ControllerBase
     }
 
     [HttpGet("{currency}")]
-    [Authorize(Roles = "Agent")]
+    //[Authorize(Roles = "Agent")]
     [OutputCache(PolicyName = PolicyNames.Default)]
     public async IAsyncEnumerable<ForexValue> GetAsync(string currency)
     {

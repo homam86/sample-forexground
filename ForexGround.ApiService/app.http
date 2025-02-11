@@ -12,7 +12,7 @@ Content-Type: application/json
   "role": "Agent"
 }
 
-### 
+### This can be used with Anonymous
 GET {{HostAddress}}/forex/eur
 Accept: application/json
 Authorization: Bearer {{JwtToken}}
